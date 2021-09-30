@@ -85,6 +85,76 @@ struct User
 	}
 };
 
+struct UsersManager{
+	map<string, User> user_object_map;
+	User current_user;
+	int last_id;
+
+	UsersManager(){
+		last_id = 0;
+	}
+
+	void authentication(){
+		vector<string> auth = {"Login", "Sign Up"};
+		int choice = readMenu(auth);
+		if(choice == 1)
+			login();
+		else
+			signUp();
+	}
+
+	void login(){
+		while (true)
+		{
+			cout<<"Enter user name & password: ";
+			cin>>current_user.user_name >> current_user.password;
+
+			if(user_object_map.find(current_user.user_name) == user_object_map.end()){
+				cout<<"\nInvalid user name or password. Try again\n\n";
+				continue;
+			}
+
+			User valid_user = user_object_map[current_user.user_name];
+
+			if(current_user.password != valid_user.password){
+				cout<<"\nInvalid user name or password. Try again\n\n";
+				continue;
+			}
+			current_user = valid_user;
+			break;
+		}
+		
+	}
+
+	void signUp(){
+		while (true)
+		{
+			cout<<"Enter user name(should not include spaces): ";
+			cin>>current_user.user_name;
+			if(user_object_map.find(current_user.user_name)!=user_object_map.end())
+				cout<<"User name already exists!(choose another)\n";
+			else
+				break;
+		}
+		cout<<"Enter password: ";
+		cin>>current_user.password;
+
+		cout<<"Enter name: ";
+		cin>>current_user.name;
+
+		cout<<"Enter email: ";
+		cin>>current_user.email;
+
+		cout<<"Allow anonymous questions? (0->No or 1->Yes): ";
+		cin>>current_user.allow_anonymous_question;
+
+		//for parallel sessions
+		//same id will be assigned thats why
+		current_user.user_id = ++last_id;
+		user_object_map[current_user.user_name] = current_user;
+	}
+};
+
 struct pucho_v1
 {
 	void run()
