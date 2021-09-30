@@ -2,7 +2,8 @@
 
 using namespace std;
 
-vector<string> splitString(string str, string separator = ","){
+vector<string> splitString(string str, string separator = ",")
+{
 	vector<string> strs;
 	int position = 0;
 	string subStr;
@@ -10,7 +11,7 @@ vector<string> splitString(string str, string separator = ","){
 	{
 		subStr = str.substr(0, position);
 		strs.push_back(subStr);
-		str.erase(0, position+separator.length());
+		str.erase(0, position + separator.length());
 	}
 	strs.push_back(str);
 	return strs;
@@ -27,10 +28,11 @@ int readInt(int low, int high)
 	return readInt(low, high);
 }
 
-int toInt(string str){
-	stringstream ss(str);
+int toInt(string str)
+{
+	istringstream iss(str);
 	int num;
-	ss>>num;
+	iss >> num;
 	return num;
 }
 
@@ -43,6 +45,45 @@ int readMenu(vector<string> &choices)
 	}
 	return readInt(1, choices.size());
 }
+
+struct User
+{
+	int user_id;
+	string user_name;
+	string password;
+	string name;
+	string email;
+	int allow_anonymous_question;
+
+	User()
+	{
+		user_id = allow_anonymous_question = -1;
+	}
+
+	User(string user_info)
+	{
+		vector<string> substrs = splitString(user_info);
+		assert(substrs.size() == 6);
+		user_id = toInt(substrs[0]);
+		user_name = substrs[1];
+		password = substrs[2];
+		name = substrs[3];
+		email = substrs[4];
+		allow_anonymous_question = toInt(substrs[5]);
+	}
+
+	string userInfoToString()
+	{
+		ostringstream oss;
+		oss << user_id << "," << user_name << "," << password << "," << name << "," << email << "," << allow_anonymous_question;
+		return oss.str();
+	}
+
+	void printUserInfo()
+	{
+		cout << "User: " << user_id << ", " << user_name << ", " << password << "," << name << ", " << email << "\n";
+	}
+};
 
 struct pucho_v1
 {
