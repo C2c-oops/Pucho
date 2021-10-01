@@ -96,6 +96,10 @@ struct User
 	string email;
 	int allow_anonymous_question;
 
+	vector<int> question_id_from_me;
+	//thread question map(question id->list of question ids)
+	map<int, vector<int>> question_thread_object_map;
+
 	User()
 	{
 		user_id = allow_anonymous_question = -1;
@@ -299,6 +303,46 @@ struct Question
 		    << answer_txt;
 
 		return oss.str();
+	}
+};
+
+struct QuestionManager
+{
+	//thread question map(question id->list of question ids)
+	map<int, vector<int>> question_thread_object_map;
+
+	map<int, Question> question_object_map;
+	int last_id;
+
+	QuestionManager()
+	{
+		last_id = 0;
+	}
+
+	void fillUserQuestions(User &user)
+	{
+		user.question_id_from_me.clear();
+		user.question_thread_object_map.clear();
+
+		for(auto &question: question_thread_object_map){ //pair<int, vector<Question>>
+			for(auto &question_id: question.second){ //vector<Question>
+				//getting question from map(from memory itslef) no copying
+				Question &current_question = question_object_map[question_id];
+
+				if(current_question.from_user_id == user.user_id){
+					user.question_id_from_me.push_back(current_question.question_id);
+				}
+
+				if(current_question.to_user_id == user.user_id){
+					if(current_question.parent_question_id == -1)
+						user.question_thread_object_map[current_question.question_id]
+							.push_back(current_question.question_id);
+					else
+						user.question_thread_object_map[current_question.parent_question_id]
+							.push_back(current_question.question_id);
+				}
+			}
+		}
 	}
 };
 
