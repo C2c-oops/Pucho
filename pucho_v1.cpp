@@ -69,20 +69,22 @@ vector<string> readFileInfo(string path)
 	return infos;
 }
 
-void writeFileLines(string path, vector<string> infos, bool append = true){
+void writeFileLines(string path, vector<string> infos, bool append = true)
+{
 	auto status = ios::in | ios::out | ios::app;
-	if(!append)
+	if (!append)
 		status = ios::in | ios::out | ios::trunc; //overwrite data
 	fstream file_handler(path.c_str(), status);
 
-	if(file_handler.fail()){
-		cout<<"\n\nError: Can't open the file\n\n";
+	if (file_handler.fail())
+	{
+		cout << "\n\nError: Can't open the file\n\n";
 		return;
 	}
 
-	for(auto info: infos)
+	for (auto info : infos)
 		file_handler << info << "\n";
-	
+
 	file_handler.close();
 }
 struct User
@@ -135,6 +137,27 @@ struct UsersManager
 		last_id = 0;
 	}
 
+	void loadDatabase()
+	{
+		last_id = 0;
+		user_object_map.clear();
+
+		vector<string> infos = readFileInfo("users.txt");
+		for (auto &info : infos)
+		{
+			User user(info);
+			user_object_map[user.user_name] = user;
+			last_id = max(last_id, user.user_id);
+		}
+	}
+
+	void updateDatabase(User &user)
+	{
+		string info = user.userInfoToString();
+		vector<string> infos(1, info);
+		writeFileLines("users.txt", infos);
+	}
+
 	void authentication()
 	{
 		vector<string> auth = {"Login", "Sign Up"};
@@ -147,6 +170,7 @@ struct UsersManager
 
 	void login()
 	{
+		loadDatabase(); //if user added from parallel run
 		while (true)
 		{
 			cout << "Enter user name & password: ";
