@@ -396,10 +396,10 @@ struct QuestionManager
 		user.question_id_from_me.clear();
 		user.question_thread_object_map.clear();
 
-		for (auto &question : question_thread_object_map)
-		{ //pair<int, vector<Question>>
-			for (auto &question_id : question.second)
-			{ //vector<Question>
+		for (auto &question : question_thread_object_map) //question<int, vector<Question>>
+		{
+			for (auto &question_id : question.second) //vector<Question>
+			{
 				//getting question from map(from memory itslef) no copying
 				Question &current_question = question_object_map[question_id];
 
@@ -420,15 +420,204 @@ struct QuestionManager
 			}
 		}
 	}
+
+	void showQuestionsForUser(User &user)
+	{
+		cout << "\n";
+		if (user.question_thread_object_map.size() == 0)
+			cout << "No Questions for you.";
+		for (auto &question : user.question_thread_object_map) //question<int, vector<Question>>
+		{
+			for (auto &question_id : question.second) //Vector<Question>
+			{
+				//getting question from map(from memory itslef) no copying
+				Question &current_question = question_object_map[question_id];
+				current_question.printQuestionsForUser();
+			}
+		}
+		cout << "\n";
+	}
+
+	void showQuestionsByUser(User &user)
+	{
+		cout << "\n";
+		if (user.question_id_from_me.size() == 0)
+			cout << "No Questions";
+
+		for (auto &question_id : user.question_id_from_me) //vector<Question>
+		{
+			//getting question from map(from memory itslef) no copying
+			Question &current_question = question_object_map[question_id];
+			current_question.printQuestionsByUser();
+		}
+		cout << "\n";
+	}
+
+	//used in answering question for user
+	//can be any question (thread or not)
+	int getAnyQuestionID(User &user)
+	{
+		int question_id;
+		cout << "Enter Question id or -1 to cancel: ";
+		cin >> question_id;
+
+		if (question_id == -1)
+			return -1;
+		if (question_object_map.find(question_id) == question_object_map.end())
+		{
+			cout << "\nERROR: No question with such ID. Try again\n\n";
+			return getAnyQuestionID(user);
+		}
+		Question &current_question = question_object_map[question_id];
+
+		if (current_question.to_user_id != user.user_id)
+		{
+			cout << "\nERROR: Invalid question ID. Try again\n\n";
+			return getAnyQuestionID(user);
+		}
+		return question_id;
+	}
+
+	//used for asking question on a specific thread for any user
+	int getThreadQuestionID(User &user)
+	{
+		int question_id;
+		cout << "For thread questions: Enter Question id or -1 for new question: ";
+		cin >> question_id;
+
+		if (question_id == -1)
+			return -1;
+
+		if (question_thread_object_map.find(question_id) == question_thread_object_map.end())
+		{
+			cout << "No thread question with such ID. Try again\n";
+			return getThreadQuestionID(user);
+		}
+		return question_id;
+	}
+
+	void answerQuestion(User &user)
+	{
+		int question_id = getAnyQuestionID(user);
+
+		if (question_id == -1)
+			return;
+		Question &current_question = question_object_map[question_id];
+		current_question.printQuestionsForUser();
+
+		if (current_question.answer_txt != "")
+			cout << "\n Warning: Already answered. Answer will be updated\n";
+
+		cout << "Enter answer: ";
+		getline(cin, current_question.answer_txt);
+		getline(cin, current_question.answer_txt);
+	}
+
+	void deleteQuestion(User &user)
+	{
+		int question_id = getAnyQuestionID(user);
+
+		if (question_id == -1)
+			return;
+
+		vector<int> ids_to_remove; //to remove from question_object_map
+		//if thread->remove all
+		if (question_thread_object_map.find(question_id) != question_thread_object_map.end())
+		{
+			ids_to_remove = question_thread_object_map[question_id];
+			question_thread_object_map.erase(question_id);
+		}
+		else
+		{
+			ids_to_remove.push_back(question_id);
+			//getting which thread to delete
+			for (auto &question : question_thread_object_map)
+			{
+				vector<int> &vec = question.second;
+				for (int pos = 0; pos < (int)vec.size(); ++pos)
+				{
+					if (question_id == vec[pos])
+					{
+						vec.erase(vec.begin() + pos);
+						break;
+					}
+				}
+			}
+		}
+		for (auto id : ids_to_remove)
+			question_object_map.erase(id);
+	}
+
+	void askQuestion(User &user, pair<int, int> to_user_pair)
+	{
+		Question question;
+		if (!to_user_pair.second)
+		{
+			cout << "Note: Anonymous questions are not allowed for this user\n";
+			question.is_anonymous_questions = 0;
+		}
+		else
+		{
+			cout << "Is annonymous questions?: (0 or 1): ";
+			cin >> question.is_anonymous_questions;
+		}
+
+		question.parent_question_id = getThreadQuestionID(user);
+
+		cout << "Enter question text: ";
+		getline(cin, question.question_txt);
+		getline(cin, question.question_txt);
+
+		question.from_user_id = user.user_id;
+		question.to_user_id = to_user_pair.first;
+
+		//for parallel sessions
+		//same id will be provide (wrong handling)
+		question.question_id = ++last_id;
+		question_object_map[question.question_id] = question;
+
+		if (question.parent_question_id == -1)
+			question_thread_object_map[question.question_id]
+			    .push_back(question.question_id);
+		else
+			question_thread_object_map[question.parent_question_id]
+			    .push_back(question.question_id);
+	}
+
+	void listFeed()
+	{
+		for (auto &question : question_object_map)
+		{
+			Question &current_question = question.second;
+
+			if (current_question.answer_txt == "")
+				continue;
+			current_question.printQuestionsForFeed();
+		}
+	}
 };
 
 struct pucho_v1
 {
+	UsersManager users_manager;
+	QuestionManager questions_manager;
+
+	void loadDatabase(bool fill_user_questions = false)
+	{
+		users_manager.loadDatabase();
+		questions_manager.loadDatabase();
+		if (fill_user_questions) //first time access
+			questions_manager.fillUserQuestions(users_manager.current_user);
+	}
 	void run()
 	{
+		loadDatabase();
+		users_manager.authentication();
+		questions_manager.fillUserQuestions(users_manager.current_user);
+
 		vector<string> menu;
-		menu.push_back("Print Questions To Me");
-		menu.push_back("Print Questions From Me");
+		menu.push_back("Print Questions asked to Me");
+		menu.push_back("Print Questions asked by Me");
 		menu.push_back("Answer Question");
 		menu.push_back("Delete Question");
 		menu.push_back("Ask Question");
@@ -439,32 +628,45 @@ struct pucho_v1
 		while (true)
 		{
 			int choice = readMenu(menu);
+			loadDatabase(true);
 
 			switch (choice)
 			{
 			case 1:
 				cout << 1 << "pressed" << endl;
+				questions_manager.showQuestionsForUser(users_manager.current_user);
 				break;
 			case 2:
 				cout << 2 << "pressed" << endl;
+				questions_manager.showQuestionsByUser(users_manager.current_user);
 				break;
 			case 3:
 				cout << 3 << "pressed" << endl;
+				questions_manager.answerQuestion(users_manager.current_user);
+				questions_manager.updateDatabase();
 				break;
 			case 4:
 				cout << 4 << "pressed" << endl;
+				questions_manager.deleteQuestion(users_manager.current_user);
+				questions_manager.fillUserQuestions(users_manager.current_user);
+				questions_manager.updateDatabase();
 				break;
 			case 5:
 				cout << 5 << "pressed" << endl;
+				pair<int, int> to_user_pair = users_manager.readUserId();
+				if (to_user_pair.first != -1)
+				{
+					questions_manager.askQuestion(users_manager.current_user, to_user_pair);
+					questions_manager.updateDatabase();
+				}
 				break;
 			case 6:
 				cout << 6 << "pressed" << endl;
+				users_manager.listUserNamesIds();
 				break;
 			case 7:
 				cout << 7 << "pressed" << endl;
-				break;
-			case 8:
-				cout << 8 << "pressed" << endl;
+				questions_manager.listFeed();
 				break;
 			default:
 				break;
