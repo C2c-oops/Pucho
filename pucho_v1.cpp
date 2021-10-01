@@ -116,7 +116,12 @@ struct User
 	string userInfoToString()
 	{
 		ostringstream oss;
-		oss << user_id << "," << user_name << "," << password << "," << name << "," << email << "," << allow_anonymous_question;
+		oss << user_id << ","
+		    << user_name << ","
+		    << password << ","
+		    << name << ","
+		    << email << ","
+		    << allow_anonymous_question;
 		return oss.str();
 	}
 
@@ -221,6 +226,79 @@ struct UsersManager
 		//same id will be assigned thats why
 		current_user.user_id = ++last_id;
 		user_object_map[current_user.user_name] = current_user;
+	}
+
+	void listUserNamesIds()
+	{
+		for (auto &user : user_object_map)
+		{
+			cout << "ID: " << user.second.user_id << "\t\tName: " << user.second.name << "\n";
+		}
+	}
+
+	pair<int, int> readUserId()
+	{
+		int user_id;
+		cout << "Enter user id or -1 to cancel: ";
+		cin >> user_id;
+
+		if (user_id == -1)
+			return make_pair(-1, -1);
+		for (auto &user : user_object_map)
+		{
+			if (user.second.user_id == user_id)
+				return make_pair(user_id, user.second.allow_anonymous_question);
+		}
+		cout << "Invalid User Id. Try again\n";
+		return readUserId();
+	}
+};
+
+struct Question
+{
+	int question_id;
+	//for supporting thread functionality
+	//each question look for it's parent question
+	//-1->No Parent->first question in the thread
+	int parent_question_id;
+	int from_user_id;
+	int to_user_id;
+	int is_anonymous_questions;
+	string question_txt;
+	string answer_txt; //if empty->not answered
+
+	Question()
+	{
+		question_id = parent_question_id = from_user_id = to_user_id = -1;
+		is_anonymous_questions = 1;
+	}
+
+	Question(string question_info)
+	{
+		vector<string> substrs = splitString(question_info);
+		assert(substrs.size() == 7);
+
+		question_id = toInt(substrs[0]);
+		parent_question_id = toInt(substrs[1]);
+		from_user_id = toInt(substrs[2]);
+		to_user_id = toInt(substrs[3]);
+		is_anonymous_questions = toInt(substrs[4]);
+		question_txt = substrs[5];
+		answer_txt = substrs[6];
+	}
+
+	string questionInfoToString()
+	{
+		ostringstream oss;
+		oss << question_id << ","
+		    << parent_question_id << ","
+		    << from_user_id << ","
+		    << to_user_id << ","
+		    << is_anonymous_questions << ","
+		    << question_txt << ","
+		    << answer_txt;
+
+		return oss.str();
 	}
 };
 
