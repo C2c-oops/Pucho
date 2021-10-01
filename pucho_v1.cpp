@@ -151,10 +151,10 @@ struct UsersManager
 		last_id = 0;
 		user_object_map.clear();
 
-		vector<string> infos = readFileInfo("users.txt");
-		for (auto &info : infos)
+		vector<string> userInfos = readFileInfo("users.txt");
+		for (auto &userInfo : userInfos)
 		{
-			User user(info);
+			User user(userInfo);
 			user_object_map[user.user_name] = user;
 			last_id = max(last_id, user.user_id);
 		}
@@ -319,27 +319,60 @@ struct QuestionManager
 		last_id = 0;
 	}
 
+	void loadDatabase()
+	{
+		last_id = 0;
+		question_thread_object_map.clear();
+		question_thread_object_map.clear();
+
+		vector<string> questionInfos = readFileInfo("questions.txt");
+		for (auto &questionInfo : questionInfos)
+		{
+			Question question(questionInfo);
+			last_id = max(last_id, question.question_id);
+			question_object_map[question.question_id] = question;
+			if (question.parent_question_id == -1)
+				question_thread_object_map[question.question_id]
+				    .push_back(question.question_id);
+			else
+				question_thread_object_map[question.parent_question_id]
+				    .push_back(question.question_id);
+		}
+	}
+
+	void updateDatabase()
+	{
+		vector<string> questionInfos;
+		for (auto &questionInfo : question_object_map)
+			questionInfos.push_back(questionInfo.second.questionInfoToString());
+		writeFileLines("question.txt", questionInfos, false);
+	}
+
 	void fillUserQuestions(User &user)
 	{
 		user.question_id_from_me.clear();
 		user.question_thread_object_map.clear();
 
-		for(auto &question: question_thread_object_map){ //pair<int, vector<Question>>
-			for(auto &question_id: question.second){ //vector<Question>
+		for (auto &question : question_thread_object_map)
+		{ //pair<int, vector<Question>>
+			for (auto &question_id : question.second)
+			{ //vector<Question>
 				//getting question from map(from memory itslef) no copying
 				Question &current_question = question_object_map[question_id];
 
-				if(current_question.from_user_id == user.user_id){
+				if (current_question.from_user_id == user.user_id)
+				{
 					user.question_id_from_me.push_back(current_question.question_id);
 				}
 
-				if(current_question.to_user_id == user.user_id){
-					if(current_question.parent_question_id == -1)
+				if (current_question.to_user_id == user.user_id)
+				{
+					if (current_question.parent_question_id == -1)
 						user.question_thread_object_map[current_question.question_id]
-							.push_back(current_question.question_id);
+						    .push_back(current_question.question_id);
 					else
 						user.question_thread_object_map[current_question.parent_question_id]
-							.push_back(current_question.question_id);
+						    .push_back(current_question.question_id);
 				}
 			}
 		}
