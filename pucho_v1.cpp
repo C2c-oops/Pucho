@@ -46,6 +46,45 @@ int readMenu(vector<string> &choices)
 	return readInt(1, choices.size());
 }
 
+vector<string> readFileInfo(string path)
+{
+	vector<string> infos;
+	fstream file_handler(path.c_str());
+
+	if (file_handler.fail())
+	{
+		cout << "\n\nError: Can't open the file\n\n";
+		return infos;
+	}
+
+	string info;
+	while (getline(file_handler, info))
+	{
+		if (info.size() == 0)
+			continue;
+		infos.push_back(info);
+	}
+
+	file_handler.close();
+	return infos;
+}
+
+void writeFileLines(string path, vector<string> infos, bool append = true){
+	auto status = ios::in | ios::out | ios::app;
+	if(!append)
+		status = ios::in | ios::out | ios::trunc; //overwrite data
+	fstream file_handler(path.c_str(), status);
+
+	if(file_handler.fail()){
+		cout<<"\n\nError: Can't open the file\n\n";
+		return;
+	}
+
+	for(auto info: infos)
+		file_handler << info << "\n";
+	
+	file_handler.close();
+}
 struct User
 {
 	int user_id;
@@ -85,68 +124,74 @@ struct User
 	}
 };
 
-struct UsersManager{
+struct UsersManager
+{
 	map<string, User> user_object_map;
 	User current_user;
 	int last_id;
 
-	UsersManager(){
+	UsersManager()
+	{
 		last_id = 0;
 	}
 
-	void authentication(){
+	void authentication()
+	{
 		vector<string> auth = {"Login", "Sign Up"};
 		int choice = readMenu(auth);
-		if(choice == 1)
+		if (choice == 1)
 			login();
 		else
 			signUp();
 	}
 
-	void login(){
+	void login()
+	{
 		while (true)
 		{
-			cout<<"Enter user name & password: ";
-			cin>>current_user.user_name >> current_user.password;
+			cout << "Enter user name & password: ";
+			cin >> current_user.user_name >> current_user.password;
 
-			if(user_object_map.find(current_user.user_name) == user_object_map.end()){
-				cout<<"\nInvalid user name or password. Try again\n\n";
+			if (user_object_map.find(current_user.user_name) == user_object_map.end())
+			{
+				cout << "\nInvalid user name or password. Try again\n\n";
 				continue;
 			}
 
 			User valid_user = user_object_map[current_user.user_name];
 
-			if(current_user.password != valid_user.password){
-				cout<<"\nInvalid user name or password. Try again\n\n";
+			if (current_user.password != valid_user.password)
+			{
+				cout << "\nInvalid user name or password. Try again\n\n";
 				continue;
 			}
 			current_user = valid_user;
 			break;
 		}
-		
 	}
 
-	void signUp(){
+	void signUp()
+	{
 		while (true)
 		{
-			cout<<"Enter user name(should not include spaces): ";
-			cin>>current_user.user_name;
-			if(user_object_map.find(current_user.user_name)!=user_object_map.end())
-				cout<<"User name already exists!(choose another)\n";
+			cout << "Enter user name(should not include spaces): ";
+			cin >> current_user.user_name;
+			if (user_object_map.find(current_user.user_name) != user_object_map.end())
+				cout << "User name already exists!(choose another)\n";
 			else
 				break;
 		}
-		cout<<"Enter password: ";
-		cin>>current_user.password;
+		cout << "Enter password: ";
+		cin >> current_user.password;
 
-		cout<<"Enter name: ";
-		cin>>current_user.name;
+		cout << "Enter name: ";
+		cin >> current_user.name;
 
-		cout<<"Enter email: ";
-		cin>>current_user.email;
+		cout << "Enter email: ";
+		cin >> current_user.email;
 
-		cout<<"Allow anonymous questions? (0->No or 1->Yes): ";
-		cin>>current_user.allow_anonymous_question;
+		cout << "Allow anonymous questions? (0->No or 1->Yes): ";
+		cin >> current_user.allow_anonymous_question;
 
 		//for parallel sessions
 		//same id will be assigned thats why
