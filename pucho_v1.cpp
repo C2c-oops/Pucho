@@ -304,6 +304,49 @@ struct Question
 
 		return oss.str();
 	}
+
+	void printQuestionsForUser()
+	{
+		string prefix = "";
+
+		if (parent_question_id != -1)
+			prefix = "\tThread: ";
+		cout << prefix << "Question Id (" << question_id << ")";
+		if (!is_anonymous_questions)
+			cout << " from user id(" << from_user_id << ")";
+		cout << "\tQuestion: " << question_txt << "\n";
+
+		if (answer_txt != "")
+			cout << prefix << "\tAnswer: " << answer_txt << "\n";
+		cout << "\n";
+	}
+
+	void printQuestionsByUser()
+	{
+		cout << "Question Id (" << question_id << ")";
+		if (!is_anonymous_questions)
+			cout << " !AQ";
+		cout << " to user id(" << to_user_id << ")";
+		cout << "\t Question: " << question_txt;
+
+		if (answer_txt != "")
+			cout << "\tAnswer: " << answer_txt << "\n";
+		else
+			cout << "\tNot Answered yet!\n";
+	}
+
+	void printQuestionsForFeed()
+	{
+		if (parent_question_id != -1)
+			cout << "Thread Parent Question ID (" << parent_question_id << ") ";
+		cout << "Question Id (" << question_id << ")";
+		if (!is_anonymous_questions)
+			cout << " from user id(" << from_user_id << ")";
+		cout << " To user id(" << to_user_id << ")";
+		cout << "\t Question: " << question_txt << "\n";
+		if (answer_txt != "")
+			cout << "\tAnswer: " << answer_txt << "\n";
+	}
 };
 
 struct QuestionManager
